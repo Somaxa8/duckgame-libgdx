@@ -6,36 +6,36 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.physics.box2d.*
 
 class Floor(private val world: World) {
-    val WIDTH = 400f
-    val HEIGHT = 50f
+    val width = 600f
+    val height = 50f
 
-    var body: Body? = null
-    var texture: Texture? = null
+    var body: Body
+//    var texture: Texture
 
-    val x: Float = 10f
-    val y: Float = -70f
+    val x: Float = (Gdx.graphics.width / 2).toFloat()
+    val y: Float = -80f
 
     init {
-        texture = Texture("floor.png")
+//        texture = Texture("floor.png")
         val bodyDef = BodyDef()
         bodyDef.type = BodyDef.BodyType.StaticBody
-        bodyDef.position[x] = y
+        bodyDef.position.set(x, y)
         body = world.createBody(bodyDef)
 
         val shape = PolygonShape()
-        shape.setAsBox(WIDTH / 2, 0.5f)
+        shape.setAsBox(width / 2, height)
 
         val fixtureDef = FixtureDef()
         fixtureDef.shape = shape
         fixtureDef.density = 1f
 
-        val fixture = body!!.createFixture(fixtureDef)
+        val fixture = body.createFixture(fixtureDef)
         fixture.userData = "floor"
         shape.dispose()
     }
 
     fun render(batch: SpriteBatch) {
         world.step(Gdx.graphics.deltaTime, 6, 2)
-        batch.draw(texture, x, y, WIDTH, HEIGHT)
+//        batch.draw(texture, x, y, width, height)
     }
 }
