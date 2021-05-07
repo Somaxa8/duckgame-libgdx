@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.physics.box2d.*
+import com.somacode.duckgame.Skills
 
 
 class Entity(private val world: World) {
@@ -14,18 +15,20 @@ class Entity(private val world: World) {
     val width = 25f
     val height = 25f
 
-    enum class Direction { UP, DOWN, LEFT, RIGHT, IDLE }
+    enum class Direction { DOWN, LEFT, RIGHT }
+    enum class Status { IDlE, WALKING }
+    var lastDireccion: Direction = Direction.LEFT
+    var status: Status = Status.IDlE
 
+    var body: Body
+    lateinit var textureRegion: TextureRegion
     var walkAnimation: Animation<TextureRegion>
     var idleAnimation: Animation<TextureRegion>
-    var jumpAnimation: Animation<TextureRegion>
-    var stateTime: Float = 0f
-    var direction: Direction = Direction.LEFT
     var x: Float = Gdx.graphics.width / 2f - width / 2f
     var y: Float = 0f
-    lateinit var textureRegion: TextureRegion
-    var isIdle: Boolean = true
-    var body: Body
+    var direction: Direction = Direction.LEFT
+    var stateTime: Float = 0f
+    var skills: Skills
 
     init {
         // Animations
@@ -33,7 +36,6 @@ class Entity(private val world: World) {
         val textureRegion = TextureRegion.split(texture, 25, 25)
         idleAnimation = Animation(0.1f, textureRegion[0][0])
         walkAnimation = Animation(0.1f, *textureRegion[1])
-        jumpAnimation = Animation(1f, *textureRegion[2])
 
         walkAnimation.playMode = Animation.PlayMode.LOOP
         idleAnimation.playMode = Animation.PlayMode.LOOP
@@ -54,67 +56,63 @@ class Entity(private val world: World) {
         val fixture = body.createFixture(fixtureDef)
         shape.dispose()
 
+        skills = Skills(body)
+
     }
 
     fun update(delta: Float) {
+        skills.update(delta)
         world.step(Gdx.graphics.deltaTime, 6, 2)
+        stateTime += Gdx.graphics.deltaTime
 
-        isIdle = true
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            status = Status.WALKING
             direction = Direction.LEFT
-            isIdle = false
             x += SPEED
         }
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            status = Status.WALKING
             direction = Direction.RIGHT
-            isIdle = false
             x -= SPEED
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
-            direction = Direction.UP
-            isIdle = false
-            jump()
-        }
-        if (isIdle) direction = Direction.IDLE
 
-        stateTime += Gdx.graphics.deltaTime
-        when (direction) {
-            Direction.IDLE -> {
+
+//        when (direction) {
+//            Direction.LEFT -> {
+//                  textureRegion = walkAnimation.getKeyFrame(stateTime)
+//                if (!textureRegion.isFlipX) {
+//                    textureRegion.flip(true, false)
+//                }
+//            }
+//            Direction.RIGHT -> {
+//                  textureRegion = walkAnimation.getKeyFrame(stateTime)
+//                if (textureRegion.isFlipX) {
+//                    textureRegion.flip(true, false)
+//                }
+//            }
+//        }
+
+        if (!Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) { status = Status.IDlE }
+
+        when (status) {
+            Status.WALKING -> {
+                textureRegion = walkAnimation.getKeyFrame(stateTime)
+            }
+            Status.IDlE -> {
                 textureRegion = idleAnimation.getKeyFrame(stateTime)
             }
-            Direction.LEFT -> {
-                textureRegion = walkAnimation.getKeyFrame(stateTime)
-                if (!textureRegion.isFlipX) {
-                    println("hola")
-                    textureRegion.flip(true, false)
-                }
-
-            }
-            Direction.RIGHT -> {
-                textureRegion = walkAnimation.getKeyFrame(stateTime)
-                if (textureRegion.isFlipX) {
-                    textureRegion.flip(true, false)
-                }
-            }
-            Direction.UP -> {
-                textureRegion = jumpAnimation.getKeyFrame(stateTime)
-//                if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-//                    textureRegion.flip(true, false)
-//                }
-//                if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-//                    textureRegion.flip(true, false)
-//                }
-            }
         }
+
+        if (direction != lastDireccion) {
+            println( "$direction es o no igual $lastDireccion")
+            textureRegion.flip(, false)
+        }
+
+        lastDireccion = direction
     }
 
     fun draw(spriteBatch: SpriteBatch) {
         spriteBatch.draw(textureRegion, body.position.x - width / 2, body.position.y - height / 2, width, height)
-    }
-
-    fun jump() {
-        val position = body.position
-        body.applyLinearImpulse(0f, 5000f, position.x, position.y, true)
     }
 
 }
