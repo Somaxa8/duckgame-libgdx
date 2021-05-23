@@ -103,9 +103,13 @@ class Entity(private val world: World) {
             }
         }
 
-        if (direction != lastDireccion) {
-            println( "$direction es o no igual $lastDireccion")
-            textureRegion.flip(, false)
+        when (direction) {
+            Direction.LEFT -> {
+                if (!textureRegion.isFlipX) textureRegion.flip(true, false)
+            }
+            Direction.RIGHT -> {
+                if (textureRegion.isFlipX) textureRegion.flip(true, false)
+            }
         }
 
         lastDireccion = direction
