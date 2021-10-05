@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.g2d.Animation
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.physics.box2d.*
-import com.somacode.duckgame.Skills
 
 
 class Entity(private val world: World) {
@@ -16,26 +15,27 @@ class Entity(private val world: World) {
     val height = 25f
 
     enum class Direction { DOWN, LEFT, RIGHT }
-    enum class Status { IDlE, WALKING }
-    var lastDireccion: Direction = Direction.LEFT
+    enum class Status { IDlE, WALKING, JUMPING }
+    var isJumping: Boolean = false
     var status: Status = Status.IDlE
 
     var body: Body
-    lateinit var textureRegion: TextureRegion
+    var textureRegion: TextureRegion = TextureRegion()
     var walkAnimation: Animation<TextureRegion>
     var idleAnimation: Animation<TextureRegion>
+    var jumpAnimation: Animation<TextureRegion>
     var x: Float = Gdx.graphics.width / 2f - width / 2f
     var y: Float = 0f
     var direction: Direction = Direction.LEFT
     var stateTime: Float = 0f
-    var skills: Skills
 
     init {
         // Animations
         val texture = Texture("duck.png")
-        val textureRegion = TextureRegion.split(texture, 25, 25)
-        idleAnimation = Animation(0.1f, textureRegion[0][0])
-        walkAnimation = Animation(0.1f, *textureRegion[1])
+        val aTextureRegion = TextureRegion.split(texture, 25, 25)
+        idleAnimation = Animation(0.1f, aTextureRegion[0][0])
+        walkAnimation = Animation(0.1f, *aTextureRegion[1])
+        jumpAnimation = Animation(1f, *aTextureRegion[2])
 
         walkAnimation.playMode = Animation.PlayMode.LOOP
         idleAnimation.playMode = Animation.PlayMode.LOOP
@@ -53,48 +53,37 @@ class Entity(private val world: World) {
         fixtureDef.shape = shape
         fixtureDef.density = 1f
 
-        val fixture = body.createFixture(fixtureDef)
+        body.createFixture(fixtureDef)
         shape.dispose()
-
-        skills = Skills(body)
 
     }
 
     fun update(delta: Float) {
-        skills.update(delta)
         world.step(Gdx.graphics.deltaTime, 6, 2)
         stateTime += Gdx.graphics.deltaTime
 
+        if (Gdx.input.isKeyPressed(Input.Keys.Z)) {
+            status = Status.JUMPING
+            jump()
+        }
         if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-            status = Status.WALKING
+            if (!isJumping) status = Status.WALKING
             direction = Direction.LEFT
             x += SPEED
         }
         if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-            status = Status.WALKING
+            if (!isJumping) status = Status.WALKING
             direction = Direction.RIGHT
             x -= SPEED
         }
 
-
-//        when (direction) {
-//            Direction.LEFT -> {
-//                  textureRegion = walkAnimation.getKeyFrame(stateTime)
-//                if (!textureRegion.isFlipX) {
-//                    textureRegion.flip(true, false)
-//                }
-//            }
-//            Direction.RIGHT -> {
-//                  textureRegion = walkAnimation.getKeyFrame(stateTime)
-//                if (textureRegion.isFlipX) {
-//                    textureRegion.flip(true, false)
-//                }
-//            }
-//        }
-
-        if (!Gdx.input.isKeyPressed(Input.Keys.ANY_KEY)) { status = Status.IDlE }
+        if (!Gdx.input.isKeyPressed(Input.Keys.ANY_KEY) && !isJumping) { status = Status.IDlE }
+//        if (!Gdx.input.isKeyPressed(Input.Keys.ANY_KEY) && isJumping) { status = Status.JUMPING }
 
         when (status) {
+            Status.JUMPING -> {
+                textureRegion = jumpAnimation.getKeyFrame(stateTime)
+            }
             Status.WALKING -> {
                 textureRegion = walkAnimation.getKeyFrame(stateTime)
             }
@@ -111,12 +100,18 @@ class Entity(private val world: World) {
                 if (textureRegion.isFlipX) textureRegion.flip(true, false)
             }
         }
-
-        lastDireccion = direction
     }
 
     fun draw(spriteBatch: SpriteBatch) {
         spriteBatch.draw(textureRegion, body.position.x - width / 2, body.position.y - height / 2, width, height)
+    }
+
+    private fun jump() {
+//        if (!isJumping) {
+            val position = body.position
+            body.applyLinearImpulse(0f, 5000f, position.x, position.y, true)
+//        }
+
     }
 
 }

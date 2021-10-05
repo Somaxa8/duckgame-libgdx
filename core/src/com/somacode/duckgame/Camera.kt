@@ -17,7 +17,6 @@ class Camera(private val player: Entity) : Updatable, Drawable {
         val w = Gdx.graphics.width.toFloat()
         val h = Gdx.graphics.height.toFloat()
         camera = OrthographicCamera(w, h)
-        camera.zoom = 0.6f
         x = player.x + player.width / 2f
     }
 

@@ -10,6 +10,7 @@ import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer
 import com.badlogic.gdx.physics.box2d.ContactFilter
 import com.badlogic.gdx.physics.box2d.ContactListener
 import com.badlogic.gdx.physics.box2d.World
+import com.somacode.duckgame.tool.WorldContactListener
 
 class Main : ApplicationAdapter() {
     lateinit var batch: SpriteBatch
@@ -25,6 +26,7 @@ class Main : ApplicationAdapter() {
         world = World(Vector2(0f, -100f), true)
         box2DDebugRenderer = Box2DDebugRenderer()
         entity = Entity(world)
+        world.setContactListener(WorldContactListener(entity))
         floor = Floor(world)
         camera = Camera(entity)
     }
